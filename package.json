@@ -1,0 +1,23 @@
+{
+  "name": "paypal-scopeguard",
+  "version": "0.2.0",
+  "description": "Bounded AI purchase intents with policy reservations and buyer-approved PayPal Orders",
+  "type": "module",
+  "main": "src/agent_paypal_controller.mjs",
+  "scripts": {
+    "test": "node --test",
+    "demo": "node demo.mjs",
+    "start": "node start_server.mjs",
+    "preview": "node preview_server.mjs"
+  },
+  "keywords": [
+    "paypal",
+    "ai-agents",
+    "agentic-commerce",
+    "scope-guard",
+    "devpost",
+    "hackathon"
+  ],
+  "author": "Siddharth Srivastava",
+  "license": "MIT"
+}

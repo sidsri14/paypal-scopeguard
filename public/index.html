@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A bounded AI purchase-intent demo with deterministic policy controls and buyer-approved PayPal sandbox orders.">
+    <title>PayPal ScopeGuard</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">PayPal AI Hackathon prototype</p>
+      <h1>AI can propose. Policy and the buyer decide.</h1>
+      <p class="lede">
+        ScopeGuard extracts a narrow purchase intent, enforces deterministic spend limits,
+        creates a PayPal sandbox order, and refuses capture until PayPal reports buyer approval.
+      </p>
+
+      <section aria-labelledby="request-heading">
+        <h2 id="request-heading">Propose a sandbox purchase</h2>
+        <form id="proposal-form">
+          <label for="instruction">Purchase instruction</label>
+          <textarea id="instruction" name="instruction" maxlength="2000" required>Buy exactly $12.00 of AI inference credits.</textarea>
+          <button type="submit">Extract intent and check policy</button>
+        </form>
+      </section>
+
+      <section id="result" class="result" aria-live="polite" hidden></section>
+
+      <section id="capture-panel" aria-labelledby="capture-heading" hidden>
+        <h2 id="capture-heading">Buyer approval returned</h2>
+        <p>PayPal returned order <code id="returned-order"></code>. Capture remains a separate explicit action.</p>
+        <button id="capture-button" type="button">Capture approved sandbox order</button>
+      </section>
+
+      <aside>
+        <strong>Safety boundary:</strong> the model cannot call PayPal, choose arbitrary fields,
+        bypass category or budget limits, approve an order, or capture funds.
+      </aside>
+    </main>
+  </body>
+</html>
