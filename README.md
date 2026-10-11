@@ -99,9 +99,8 @@ No real AI-provider call or PayPal sandbox transaction is claimed yet.
 1. Create or access PayPal developer sandbox credentials.
 2. Run and record the complete AI extraction, PayPal approval, and capture flow.
 3. Add signed PayPal webhook verification and restart-safe state/reconciliation.
-4. Publish this MIT-licensed repository and enable CI.
-5. Record the required public demonstration video under three minutes.
-6. Create and confirm the Devpost submission.
+4. Record the required public demonstration video under three minutes.
+5. Create and confirm the Devpost submission.
 
 ## License
 
