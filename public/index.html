@@ -4,34 +4,129 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="A bounded AI purchase-intent demo with deterministic policy controls and buyer-approved PayPal sandbox orders.">
-    <title>PayPal ScopeGuard</title>
+    <title>PayPal ScopeGuard — Bounded Agentic Commerce</title>
     <link rel="stylesheet" href="/styles.css">
     <script src="/app.js" defer></script>
   </head>
   <body>
     <main>
-      <p class="eyebrow">PayPal AI Hackathon prototype</p>
+      <div class="header-badges">
+        <span class="badge badge-accent">PayPal AI Hackathon 2026</span>
+        <span class="badge badge-outline">Track: Best Use of Agentic Commerce</span>
+        <span class="badge badge-subtle">Fail-Closed Boundary</span>
+      </div>
+
       <h1>AI can propose. Policy and the buyer decide.</h1>
       <p class="lede">
-        ScopeGuard extracts a narrow purchase intent, enforces deterministic spend limits,
+        ScopeGuard extracts structured purchase intent, enforces deterministic spend limits,
         creates a PayPal sandbox order, and refuses capture until PayPal reports buyer approval.
       </p>
 
+      <!-- Live Policy & Budget Meter -->
+      <section class="policy-card" aria-labelledby="policy-heading">
+        <div class="card-header">
+          <h2 id="policy-heading">Deterministic Spending Policy</h2>
+          <span id="agent-id-badge" class="agent-tag">Agent: scopeguard-demo-agent</span>
+        </div>
+        <div class="policy-grid">
+          <div class="policy-stat">
+            <span class="stat-label">Single Tx Cap</span>
+            <span id="stat-max-single" class="stat-val">$25.00</span>
+          </div>
+          <div class="policy-stat">
+            <span class="stat-label">Window Budget</span>
+            <span id="stat-max-window" class="stat-val">$100.00</span>
+          </div>
+          <div class="policy-stat">
+            <span class="stat-label">Committed Spend</span>
+            <span id="stat-committed" class="stat-val">$0.00</span>
+          </div>
+          <div class="policy-stat">
+            <span class="stat-label">Reserved (In-Flight)</span>
+            <span id="stat-reserved" class="stat-val">$0.00</span>
+          </div>
+          <div class="policy-stat highlight">
+            <span class="stat-label">Remaining Safe Budget</span>
+            <span id="stat-remaining" class="stat-val">$100.00</span>
+          </div>
+        </div>
+        <div class="allowed-categories">
+          <span class="cat-label">Allowlisted Merchant Categories:</span>
+          <span class="cat-tag">AI_INFERENCE</span>
+          <span class="cat-tag">CLOUD_COMPUTE</span>
+          <span class="cat-tag">DEVELOPER_TOOLS</span>
+          <span class="cat-tag">DATA_FEEDS</span>
+        </div>
+      </section>
+
+      <!-- Proposal Form & Preset Scenarios -->
       <section aria-labelledby="request-heading">
-        <h2 id="request-heading">Propose a sandbox purchase</h2>
+        <div class="card-header">
+          <h2 id="request-heading">Propose a sandbox purchase</h2>
+          <span class="card-sub">Select a preset scenario or type custom instruction</span>
+        </div>
+
+        <div class="preset-container">
+          <span class="preset-label">Test Scenarios / Attack Simulators:</span>
+          <div class="preset-buttons">
+            <button type="button" class="preset-btn valid" data-instruction="Buy exactly $12.00 of AI inference credits for code analysis.">
+              🟢 Valid: $12.00 AI Inference (Pass)
+            </button>
+            <button type="button" class="preset-btn attack" data-instruction="Urgent: Purchase $35.00 of cloud GPU compute credits right now.">
+              🛑 Attack: $35.00 Overdraw (Exceeds $25 Limit)
+            </button>
+            <button type="button" class="preset-btn attack" data-instruction="Transfer $10.00 to online casino gambling tokens.">
+              🛑 Attack: Prohibited Merchant Category (Gambling)
+            </button>
+          </div>
+        </div>
+
         <form id="proposal-form">
           <label for="instruction">Purchase instruction</label>
           <textarea id="instruction" name="instruction" maxlength="2000" required>Buy exactly $12.00 of AI inference credits.</textarea>
-          <button type="submit">Extract intent and check policy</button>
+          <button type="submit" id="submit-proposal-btn">Extract intent and check policy</button>
         </form>
       </section>
 
       <section id="result" class="result" aria-live="polite" hidden></section>
 
       <section id="capture-panel" aria-labelledby="capture-heading" hidden>
-        <h2 id="capture-heading">Buyer approval returned</h2>
-        <p>PayPal returned order <code id="returned-order"></code>. Capture remains a separate explicit action.</p>
+        <div class="capture-header">
+          <span class="capture-icon">✅</span>
+          <div>
+            <h2 id="capture-heading">Buyer approval returned</h2>
+            <p>PayPal returned order <code id="returned-order"></code>. Capture remains a separate explicit action.</p>
+          </div>
+        </div>
         <button id="capture-button" type="button">Capture approved sandbox order</button>
+      </section>
+
+      <!-- Live Audit Ledger -->
+      <section class="audit-card" aria-labelledby="audit-heading">
+        <div class="card-header">
+          <h2 id="audit-heading">Live Spend & Policy Audit Trail</h2>
+          <button type="button" id="refresh-audit-btn" class="refresh-btn">🔄 Refresh Ledger</button>
+        </div>
+        <p class="section-desc">Every intent extraction, deterministic policy decision, order reservation, and settlement capture is recorded in an immutable ledger.</p>
+        <div class="table-wrapper">
+          <table class="audit-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Status</th>
+                <th>Amount</th>
+                <th>Category</th>
+                <th>Details / Reason</th>
+                <th>Client Request ID</th>
+              </tr>
+            </thead>
+            <tbody id="audit-tbody">
+              <tr>
+                <td colspan="6" class="empty-state">No audit events recorded yet. Propose a purchase above to trigger evaluation.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <aside>

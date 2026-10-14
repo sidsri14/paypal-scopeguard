@@ -151,6 +151,9 @@ export class InMemoryPayPalClient {
     }
 
     const id = `MOCK-${crypto.randomUUID()}`;
+    const approvalHref = params.returnUrl
+      ? (params.returnUrl.includes('?') ? `${params.returnUrl}&token=${id}` : `${params.returnUrl}?token=${id}`)
+      : `https://sandbox.example.test/approve/${id}`;
     const order = {
       id,
       status: 'CREATED',
@@ -162,7 +165,7 @@ export class InMemoryPayPalClient {
         },
       ],
       links: [
-        { rel: 'approve', href: `https://sandbox.example.test/approve/${id}`, method: 'GET' },
+        { rel: 'approve', href: approvalHref, method: 'GET' },
       ],
     };
     this.orders.set(id, order);

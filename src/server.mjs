@@ -122,6 +122,30 @@ export function createScopeGuardServer({ service, controller, appBaseUrl, public
         return;
       }
 
+      if (request.method === 'GET' && url.pathname === '/api/audit') {
+        sendJson(response, 200, {
+          agentId: controller.agentId,
+          committedMinor: controller.policy?.committedMinor || 0,
+          reservedMinor: controller.policy?.getReservedMinor?.() || 0,
+          remainingMinor: controller.policy?.getRemainingMinor?.() || 0,
+          maxPerTransactionMinor: controller.policy?.maxPerTransactionMinor || 0,
+          maxWindowMinor: controller.policy?.maxWindowMinor || 0,
+          events: controller.getAuditTrail?.() || [],
+        });
+        return;
+      }
+
+      if (url.searchParams.get('paypal') === 'approved') {
+        const token = url.searchParams.get('token');
+        if (token && controller.client && typeof controller.client.approveOrder === 'function') {
+          try {
+            controller.client.approveOrder(token);
+          } catch {
+            // Ignore if already approved or unknown
+          }
+        }
+      }
+
       if (request.method === 'POST' && url.pathname === '/api/proposals') {
         const body = await readJson(request);
         const result = await service.proposeFromInstruction({
