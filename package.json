@@ -7,6 +7,8 @@
   "scripts": {
     "test": "node --test",
     "demo": "node demo.mjs",
+    "demo:record": "node demo/record-demo.mjs",
+    "demo:build": "npm run demo:record && node demo/build-video.mjs",
     "start": "node start_server.mjs",
     "preview": "node preview_server.mjs"
   },
@@ -19,5 +21,8 @@
     "hackathon"
   ],
   "author": "Siddharth Srivastava",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "playwright": "^1.61.1"
+  }
 }

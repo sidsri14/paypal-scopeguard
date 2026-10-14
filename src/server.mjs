@@ -112,6 +112,7 @@ export function createScopeGuardServer({
   controller,
   webhookVerifier,
   appBaseUrl,
+  runtimeMode = 'sandbox',
   publicDir = DEFAULT_PUBLIC_DIR,
 }) {
   if (!service || typeof service.proposeFromInstruction !== 'function') {
@@ -146,7 +147,7 @@ export function createScopeGuardServer({
       }
 
       if (request.method === 'GET' && url.pathname === '/health') {
-        sendJson(response, 200, { status: 'ok', paypalEnvironment: 'sandbox' });
+        sendJson(response, 200, { status: 'ok', paypalEnvironment: 'sandbox', runtimeMode });
         return;
       }
 

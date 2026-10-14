@@ -4,10 +4,10 @@ PayPal ScopeGuard is a bounded AI purchase-intent prototype for PayPal Orders.
 The model can translate a natural-language request into four constrained fields,
 but it cannot call PayPal, approve an order, bypass policy, or capture funds.
 
-This repository is not yet a hackathon submission or a production payment
-service. The local controller, restart recovery, webhook boundary, and browser
-flow are tested, but the end-to-end flow has not yet been verified with real
-AI-provider and PayPal sandbox credentials.
+This repository contains the PayPal AI Hackathon submission prototype. It is
+not a production payment service. The local controller, restart recovery,
+webhook boundary, and browser flow are tested, but the end-to-end flow has not
+yet been verified with real AI-provider and PayPal sandbox credentials.
 
 ![ScopeGuard browser interface](scopeguard-ui.png)
 
@@ -64,11 +64,16 @@ Requires a current Node.js release with ESM and built-in `fetch`.
 ```bash
 npm test
 npm run demo
+npm run demo:build
 ```
 
 `npm run demo` is visibly labeled as a simulation and never contacts PayPal or
 an AI provider. `npm run preview` serves only the static UI for visual review;
 its proposal and capture endpoints intentionally return unavailable errors.
+`npm run demo:build` records that same deterministic simulation at 1440x900 and
+builds `demo/scopeguard-demo.mp4` with narration and burned-in captions. The
+recording demonstrates lost-response recovery without claiming a real PayPal
+sandbox payment.
 
 ## Run the real sandbox flow locally
 
@@ -122,18 +127,20 @@ Local verification on October 14, 2026:
 - Recovery coverage includes restart with a reserved order, response loss after
   remote create/capture, stable retry IDs, webhook tampering/replay, and the
   no-auto-capture approval invariant.
+- The 94-second demonstration is H.264/AAC at 1440x900 and identifies its
+  in-memory PayPal simulator in both the interface and narration.
 
 No real AI-provider call or PayPal sandbox transaction is claimed yet.
 
-## Remaining hackathon gates
+## Remaining production-validation gates
 
 1. Create or access PayPal developer sandbox credentials.
 2. Put the verified webhook endpoint behind HTTPS, register it in the sandbox
    app, and exercise it with a real sandbox event.
 3. Run and record the complete AI extraction, PayPal approval, capture, and
    reconciliation flow.
-4. Record the required public demonstration video under three minutes.
-5. Create and confirm the Devpost submission.
+4. Replace the local JSON state store with managed durable storage and add
+   authenticated remote ingress before any non-demo deployment.
 
 ## License
 

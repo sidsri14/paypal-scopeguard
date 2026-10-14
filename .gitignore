@@ -7,3 +7,10 @@ npm-debug.log*
 coverage/
 /data/
 *.tmp
+/demo/page@*.webm
+/demo/narration-*.wav
+/demo/scopeguard-demo.webm
+/demo/scopeguard-demo-narrated.mp4
+/demo/recording-metadata.json
+/demo/qa-*.png
+/demo/pixelcheck-*.bmp

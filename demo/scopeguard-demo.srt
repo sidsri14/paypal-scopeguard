@@ -1,0 +1,87 @@
+1
+00:00:00,100 --> 00:00:05,017
+ScopeGuard begins with one boundary. The language model may describe
+
+2
+00:00:05,017 --> 00:00:08,950
+a purchase, but it never receives PayPal credentials.
+
+3
+00:00:09,300 --> 00:00:13,776
+This is the clearly labeled local simulation mode. A twelve
+
+4
+00:00:13,776 --> 00:00:18,252
+dollar inference request is reduced to four fields, checked against
+
+5
+00:00:18,252 --> 00:00:22,727
+fixed category and spending rules, and reserved before any remote
+
+6
+00:00:22,727 --> 00:00:23,175
+call.
+
+7
+00:00:23,525 --> 00:00:28,506
+The simulator now returns buyer approval. Capture is still a
+
+8
+00:00:28,506 --> 00:00:30,000
+separate, explicit action.
+
+9
+00:00:30,350 --> 00:00:34,718
+Here, the remote side completes the capture, but the response
+
+10
+00:00:34,718 --> 00:00:39,085
+is deliberately dropped. ScopeGuard does not release the budget or
+
+11
+00:00:39,085 --> 00:00:43,453
+guess that payment failed. It keeps the amount reserved, and
+
+12
+00:00:43,453 --> 00:00:45,200
+marks the outcome uncertain.
+
+13
+00:00:45,550 --> 00:00:50,484
+Reconciliation reads the authoritative order state, and commits the reservation
+
+14
+00:00:50,484 --> 00:00:54,925
+exactly once. It does not send a second capture.
+
+15
+00:00:55,275 --> 00:01:00,608
+The next requests are rejected deterministically. One exceeds the twenty
+
+16
+00:01:00,608 --> 00:01:05,942
+five dollar transaction limit. The other uses a prohibited merchant
+
+17
+00:01:05,942 --> 00:01:08,075
+category. Neither reaches PayPal.
+
+18
+00:01:08,425 --> 00:01:14,675
+The local audit trail records each reservation, uncertain outcome, reconciliation,
+
+19
+00:01:14,675 --> 00:01:17,800
+completion, and denial across restarts.
+
+20
+00:01:18,150 --> 00:01:23,823
+This recording uses an in-memory PayPal simulator. No real sandbox
+
+21
+00:01:23,823 --> 00:01:29,496
+payment is claimed. The repository also includes raw-body webhook signature
+
+22
+00:01:29,496 --> 00:01:32,900
+verification, and twenty five passing tests.

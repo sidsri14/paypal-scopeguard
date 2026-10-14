@@ -8,6 +8,7 @@ const instructionInput = document.querySelector('#instruction');
 const presetButtons = document.querySelectorAll('.preset-btn');
 const refreshAuditBtn = document.querySelector('#refresh-audit-btn');
 const auditTbody = document.querySelector('#audit-tbody');
+const runtimeModeBadge = document.querySelector('#runtime-mode-badge');
 
 const agentIdBadge = document.querySelector('#agent-id-badge');
 const statMaxSingle = document.querySelector('#stat-max-single');
@@ -15,6 +16,7 @@ const statMaxWindow = document.querySelector('#stat-max-window');
 const statCommitted = document.querySelector('#stat-committed');
 const statReserved = document.querySelector('#stat-reserved');
 const statRemaining = document.querySelector('#stat-remaining');
+let currentRuntimeMode = 'sandbox';
 
 function formatUsd(cents) {
   if (typeof cents !== 'number' || Number.isNaN(cents)) return '$0.00';
@@ -142,6 +144,20 @@ async function fetchAudit() {
   }
 }
 
+async function fetchRuntimeMode() {
+  try {
+    const response = await fetch('/health');
+    if (!response.ok) return;
+    const health = await response.json();
+    currentRuntimeMode = health.runtimeMode;
+    runtimeModeBadge.textContent = health.runtimeMode === 'simulation'
+      ? 'Mode: local simulation'
+      : 'Mode: PayPal sandbox';
+  } catch {
+    runtimeModeBadge.textContent = 'Mode: unavailable';
+  }
+}
+
 // Preset button click handling
 presetButtons.forEach((btn) => {
   btn.addEventListener('click', () => {
@@ -178,7 +194,9 @@ form.addEventListener('submit', async (event) => {
       const link = document.createElement('a');
       link.className = 'approval-link';
       link.href = payload.proposal.approvalUrl;
-      link.textContent = 'Continue to PayPal sandbox approval ->';
+      link.textContent = currentRuntimeMode === 'simulation'
+        ? 'Continue to simulated buyer approval ->'
+        : 'Continue to PayPal sandbox approval ->';
       result.append(link);
     }
   } catch (error) {
@@ -225,4 +243,5 @@ reconcileButton.addEventListener('click', async () => {
 });
 
 // Initial load
+fetchRuntimeMode();
 fetchAudit();

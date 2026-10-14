@@ -68,7 +68,13 @@ const intentAdapter = hasAiKeys
     });
 
 const service = new ScopeGuardService({ controller, intentAdapter });
-const server = createScopeGuardServer({ service, controller, webhookVerifier, appBaseUrl });
+const server = createScopeGuardServer({
+  service,
+  controller,
+  webhookVerifier,
+  appBaseUrl,
+  runtimeMode: hasPayPalKeys ? 'sandbox' : 'simulation',
+});
 
 server.listen(port, host, () => {
   console.log(`PayPal ScopeGuard listening at ${appBaseUrl}`);

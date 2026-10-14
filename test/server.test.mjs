@@ -42,12 +42,16 @@ test('loopback server exposes UI, health, proposal, and capture routes', async (
   assert.equal(page.status, 200);
   const pageBody = await page.text();
   assert.match(pageBody, /AI can propose\. Policy and the buyer decide\./);
-  assert.match(pageBody, /Check PayPal order status/);
+  assert.match(pageBody, /Check authoritative order status/);
   assert.doesNotMatch(pageBody, /immutable ledger/i);
   assert.match(page.headers.get('content-security-policy'), /frame-ancestors 'none'/);
 
   const health = await fetch(`${baseUrl}/health`).then((response) => response.json());
-  assert.deepEqual(health, { status: 'ok', paypalEnvironment: 'sandbox' });
+  assert.deepEqual(health, {
+    status: 'ok',
+    paypalEnvironment: 'sandbox',
+    runtimeMode: 'sandbox',
+  });
 
   const proposal = await fetch(`${baseUrl}/api/proposals`, {
     method: 'POST',

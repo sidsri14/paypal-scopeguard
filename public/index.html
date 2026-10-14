@@ -14,12 +14,13 @@
         <span class="badge badge-accent">PayPal AI Hackathon 2026</span>
         <span class="badge badge-outline">Track: Best Use of Agentic Commerce</span>
         <span class="badge badge-subtle">Fail-Closed Boundary</span>
+        <span id="runtime-mode-badge" class="badge badge-subtle">Mode: checking</span>
       </div>
 
       <h1>AI can propose. Policy and the buyer decide.</h1>
       <p class="lede">
         ScopeGuard extracts structured purchase intent, enforces deterministic spend limits,
-        creates a PayPal sandbox order, and refuses capture until PayPal reports buyer approval.
+        creates an approval-gated order, and refuses capture until the payment client reports buyer approval.
       </p>
 
       <!-- Live Policy & Budget Meter -->
@@ -62,7 +63,7 @@
       <!-- Proposal Form & Preset Scenarios -->
       <section aria-labelledby="request-heading">
         <div class="card-header">
-          <h2 id="request-heading">Propose a sandbox purchase</h2>
+          <h2 id="request-heading">Propose a bounded purchase</h2>
           <span class="card-sub">Select a preset scenario or type custom instruction</span>
         </div>
 
@@ -95,11 +96,11 @@
           <span class="capture-icon">OK</span>
           <div>
             <h2 id="capture-heading">Buyer approval returned</h2>
-            <p>PayPal returned order <code id="returned-order"></code>. Capture remains a separate explicit action.</p>
+            <p>The configured payment client returned order <code id="returned-order"></code>. Capture remains a separate explicit action.</p>
           </div>
         </div>
-        <button id="capture-button" type="button">Capture approved sandbox order</button>
-        <button id="reconcile-button" type="button">Check PayPal order status</button>
+        <button id="capture-button" type="button">Capture approved order</button>
+        <button id="reconcile-button" type="button">Check authoritative order status</button>
       </section>
 
       <!-- Live Audit Ledger -->
