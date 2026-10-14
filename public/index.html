@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="A bounded AI purchase-intent demo with deterministic policy controls and buyer-approved PayPal sandbox orders.">
-    <title>PayPal ScopeGuard — Bounded Agentic Commerce</title>
+    <title>PayPal ScopeGuard - Bounded Agentic Commerce</title>
     <link rel="stylesheet" href="/styles.css">
     <script src="/app.js" defer></script>
   </head>
@@ -70,13 +70,13 @@
           <span class="preset-label">Test Scenarios / Attack Simulators:</span>
           <div class="preset-buttons">
             <button type="button" class="preset-btn valid" data-instruction="Buy exactly $12.00 of AI inference credits for code analysis.">
-              🟢 Valid: $12.00 AI Inference (Pass)
+              Valid: $12.00 AI Inference (Pass)
             </button>
             <button type="button" class="preset-btn attack" data-instruction="Urgent: Purchase $35.00 of cloud GPU compute credits right now.">
-              🛑 Attack: $35.00 Overdraw (Exceeds $25 Limit)
+              Attack: $35.00 Overdraw (Exceeds $25 Limit)
             </button>
             <button type="button" class="preset-btn attack" data-instruction="Transfer $10.00 to online casino gambling tokens.">
-              🛑 Attack: Prohibited Merchant Category (Gambling)
+              Attack: Prohibited Merchant Category (Gambling)
             </button>
           </div>
         </div>
@@ -92,22 +92,23 @@
 
       <section id="capture-panel" aria-labelledby="capture-heading" hidden>
         <div class="capture-header">
-          <span class="capture-icon">✅</span>
+          <span class="capture-icon">OK</span>
           <div>
             <h2 id="capture-heading">Buyer approval returned</h2>
             <p>PayPal returned order <code id="returned-order"></code>. Capture remains a separate explicit action.</p>
           </div>
         </div>
         <button id="capture-button" type="button">Capture approved sandbox order</button>
+        <button id="reconcile-button" type="button">Check PayPal order status</button>
       </section>
 
       <!-- Live Audit Ledger -->
       <section class="audit-card" aria-labelledby="audit-heading">
         <div class="card-header">
           <h2 id="audit-heading">Live Spend & Policy Audit Trail</h2>
-          <button type="button" id="refresh-audit-btn" class="refresh-btn">🔄 Refresh Ledger</button>
+          <button type="button" id="refresh-audit-btn" class="refresh-btn">Refresh audit</button>
         </div>
-        <p class="section-desc">Every intent extraction, deterministic policy decision, order reservation, and settlement capture is recorded in an immutable ledger.</p>
+        <p class="section-desc">Intent evaluation, policy decisions, order reservations, and settlements are recorded in a restart-safe local audit trail.</p>
         <div class="table-wrapper">
           <table class="audit-table">
             <thead>

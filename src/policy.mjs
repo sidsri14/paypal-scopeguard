@@ -4,6 +4,12 @@ function requirePositiveInteger(value, field) {
   }
 }
 
+function requireNonNegativeInteger(value, field) {
+  if (!Number.isSafeInteger(value) || value < 0) {
+    throw new TypeError(`${field} must be a non-negative safe integer`);
+  }
+}
+
 export class AgentSpendPolicy {
   constructor(config) {
     if (typeof config.agentId !== 'string' || config.agentId.trim().length === 0) {
@@ -127,5 +133,43 @@ export class AgentSpendPolicy {
 
   reinstate() {
     this.active = true;
+  }
+
+  exportState() {
+    return {
+      active: this.active,
+      windowStartedAt: this.windowStartedAt,
+      committedMinor: this.committedMinor,
+      reservations: [...this.reservations.entries()],
+    };
+  }
+
+  restoreState(state) {
+    if (!state || typeof state !== 'object') throw new TypeError('policy state must be an object');
+    if (typeof state.active !== 'boolean') throw new TypeError('policy state active must be boolean');
+    requireNonNegativeInteger(state.windowStartedAt, 'policy state windowStartedAt');
+    requireNonNegativeInteger(state.committedMinor, 'policy state committedMinor');
+    if (!Array.isArray(state.reservations)) {
+      throw new TypeError('policy state reservations must be an array');
+    }
+
+    const reservations = new Map();
+    for (const entry of state.reservations) {
+      if (!Array.isArray(entry) || entry.length !== 2) {
+        throw new TypeError('policy reservation entries must be [id, amount] pairs');
+      }
+      const [id, amount] = entry;
+      if (typeof id !== 'string' || id.length === 0 || reservations.has(id)) {
+        throw new TypeError('policy reservation IDs must be unique non-empty strings');
+      }
+      requirePositiveInteger(amount, 'policy reservation amount');
+      reservations.set(id, amount);
+    }
+
+    this.active = state.active;
+    this.windowStartedAt = state.windowStartedAt;
+    this.committedMinor = state.committedMinor;
+    this.reservations = reservations;
+    this._refreshWindow();
   }
 }

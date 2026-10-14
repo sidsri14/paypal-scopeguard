@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const DEFAULT_PUBLIC_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
 const MAX_BODY_BYTES = 16 * 1024;
+const MAX_WEBHOOK_BODY_BYTES = 256 * 1024;
 const STATIC_FILES = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
   ['/app.js', ['app.js', 'text/javascript; charset=utf-8']],
@@ -17,7 +18,7 @@ function sendJson(response, status, body) {
   response.end(JSON.stringify(body));
 }
 
-async function readJson(request) {
+async function readJsonWithRaw(request, maxBytes = MAX_BODY_BYTES) {
   if (!request.headers['content-type']?.toLowerCase().startsWith('application/json')) {
     const error = new Error('Content-Type must be application/json');
     error.statusCode = 415;
@@ -28,7 +29,7 @@ async function readJson(request) {
   let size = 0;
   for await (const chunk of request) {
     size += chunk.length;
-    if (size > MAX_BODY_BYTES) {
+    if (size > maxBytes) {
       const error = new Error('Request body is too large');
       error.statusCode = 413;
       throw error;
@@ -36,13 +37,18 @@ async function readJson(request) {
     chunks.push(chunk);
   }
 
+  const rawBody = Buffer.concat(chunks);
   try {
-    return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    return { body: JSON.parse(rawBody.toString('utf8')), rawBody };
   } catch {
     const error = new Error('Request body must be valid JSON');
     error.statusCode = 400;
     throw error;
   }
+}
+
+async function readJson(request) {
+  return (await readJsonWithRaw(request)).body;
 }
 
 function setSecurityHeaders(response) {
@@ -101,7 +107,13 @@ async function serveStatic(response, publicDir, pathname) {
   return true;
 }
 
-export function createScopeGuardServer({ service, controller, appBaseUrl, publicDir = DEFAULT_PUBLIC_DIR }) {
+export function createScopeGuardServer({
+  service,
+  controller,
+  webhookVerifier,
+  appBaseUrl,
+  publicDir = DEFAULT_PUBLIC_DIR,
+}) {
   if (!service || typeof service.proposeFromInstruction !== 'function') {
     throw new TypeError('service must implement proposeFromInstruction');
   }
@@ -115,7 +127,23 @@ export function createScopeGuardServer({ service, controller, appBaseUrl, public
     const url = new URL(request.url || '/', baseUrl);
 
     try {
-      validateBrowserBoundary(request, baseUrl);
+      const isWebhook = request.method === 'POST' && url.pathname === '/api/paypal/webhook';
+      if (!isWebhook) validateBrowserBoundary(request, baseUrl);
+
+      if (isWebhook) {
+        if (!webhookVerifier || typeof controller.handlePayPalWebhook !== 'function') {
+          sendJson(response, 404, { error: 'NOT_FOUND' });
+          return;
+        }
+        const { body, rawBody } = await readJsonWithRaw(request, MAX_WEBHOOK_BODY_BYTES);
+        if (!await webhookVerifier.verify(rawBody, request.headers)) {
+          sendJson(response, 401, { error: 'INVALID_WEBHOOK_SIGNATURE' });
+          return;
+        }
+        const result = await controller.handlePayPalWebhook(body);
+        sendJson(response, 200, result);
+        return;
+      }
 
       if (request.method === 'GET' && url.pathname === '/health') {
         sendJson(response, 200, { status: 'ok', paypalEnvironment: 'sandbox' });
@@ -124,7 +152,7 @@ export function createScopeGuardServer({ service, controller, appBaseUrl, public
 
       if (request.method === 'GET' && url.pathname === '/api/audit') {
         sendJson(response, 200, {
-          agentId: controller.agentId,
+          agentId: controller.policy?.agentId,
           committedMinor: controller.policy?.committedMinor || 0,
           reservedMinor: controller.policy?.getReservedMinor?.() || 0,
           remainingMinor: controller.policy?.getRemainingMinor?.() || 0,
@@ -161,6 +189,17 @@ export function createScopeGuardServer({ service, controller, appBaseUrl, public
       if (request.method === 'POST' && url.pathname === '/api/capture') {
         const body = await readJson(request);
         const result = await controller.captureApprovedOrder(body.orderId);
+        sendJson(response, result.success ? 200 : 409, result);
+        return;
+      }
+
+      if (request.method === 'POST' && url.pathname === '/api/reconcile') {
+        if (typeof controller.reconcileOrder !== 'function') {
+          sendJson(response, 501, { error: 'NOT_IMPLEMENTED' });
+          return;
+        }
+        const body = await readJson(request);
+        const result = await controller.reconcileOrder(body.orderId);
         sendJson(response, result.success ? 200 : 409, result);
         return;
       }

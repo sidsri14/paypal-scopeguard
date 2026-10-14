@@ -18,6 +18,16 @@ function requireText(value, field, maxLength) {
   return value.trim();
 }
 
+export class PayPalHttpError extends Error {
+  constructor(message, { status, phase, debugId } = {}) {
+    super(message);
+    this.name = 'PayPalHttpError';
+    this.status = status;
+    this.phase = phase;
+    this.debugId = debugId;
+  }
+}
+
 export class PayPalApiClient {
   constructor(options = {}) {
     this.environment = options.environment || process.env.PAYPAL_ENVIRONMENT || 'sandbox';
@@ -52,7 +62,10 @@ export class PayPalApiClient {
     });
 
     if (!response.ok) {
-      throw new Error(`PayPal OAuth failed with HTTP ${response.status}`);
+      throw new PayPalHttpError(`PayPal OAuth failed with HTTP ${response.status}`, {
+        status: response.status,
+        phase: 'oauth',
+      });
     }
 
     const body = await response.json();
@@ -76,8 +89,9 @@ export class PayPalApiClient {
     const responseBody = await response.json().catch(() => ({}));
     if (!response.ok) {
       const debugId = response.headers?.get?.('paypal-debug-id');
-      throw new Error(
+      throw new PayPalHttpError(
         `PayPal request failed with HTTP ${response.status}${debugId ? ` (debug ${debugId})` : ''}`,
+        { status: response.status, phase: 'api', debugId },
       );
     }
     return responseBody;
@@ -121,7 +135,12 @@ export class PayPalApiClient {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     const body = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(`PayPal order lookup failed with HTTP ${response.status}`);
+    if (!response.ok) {
+      throw new PayPalHttpError(`PayPal order lookup failed with HTTP ${response.status}`, {
+        status: response.status,
+        phase: 'api',
+      });
+    }
     return body;
   }
 
@@ -138,8 +157,12 @@ export class InMemoryPayPalClient {
     this.orders = new Map();
     this.createDelayMs = options.createDelayMs || 0;
     this.failNextCreate = false;
+    this.failAfterNextCreate = false;
+    this.failAfterNextCapture = false;
     this.createCalls = 0;
     this.captureCalls = 0;
+    this.orderIdByRequestId = new Map();
+    this.captureByRequestId = new Map();
   }
 
   async createOrder(params) {
@@ -147,8 +170,14 @@ export class InMemoryPayPalClient {
     if (this.createDelayMs) await new Promise((resolve) => setTimeout(resolve, this.createDelayMs));
     if (this.failNextCreate) {
       this.failNextCreate = false;
-      throw new Error('Simulated PayPal create failure');
+      throw new PayPalHttpError('Simulated definitive PayPal create failure', {
+        status: 422,
+        phase: 'api',
+      });
     }
+
+    const existingOrderId = this.orderIdByRequestId.get(params.requestId);
+    if (existingOrderId) return structuredClone(this.orders.get(existingOrderId));
 
     const id = `MOCK-${crypto.randomUUID()}`;
     const approvalHref = params.returnUrl
@@ -169,6 +198,11 @@ export class InMemoryPayPalClient {
       ],
     };
     this.orders.set(id, order);
+    this.orderIdByRequestId.set(params.requestId, id);
+    if (this.failAfterNextCreate) {
+      this.failAfterNextCreate = false;
+      throw new Error('Simulated connection loss after PayPal created the order');
+    }
     return structuredClone(order);
   }
 
@@ -184,17 +218,34 @@ export class InMemoryPayPalClient {
     order.status = 'APPROVED';
   }
 
-  async captureOrder(orderId) {
+  voidOrder(orderId) {
+    const order = this.orders.get(orderId);
+    if (!order) throw new Error(`Unknown mock order: ${orderId}`);
+    order.status = 'VOIDED';
+  }
+
+  async captureOrder(orderId, requestId) {
     this.captureCalls += 1;
+    const prior = this.captureByRequestId.get(requestId);
+    if (prior) return structuredClone(prior);
     const order = this.orders.get(orderId);
     if (!order) throw new Error(`Unknown mock order: ${orderId}`);
     if (order.status !== 'APPROVED') throw new Error('ORDER_NOT_APPROVED');
     order.status = 'COMPLETED';
     const captureId = `CAPTURE-${crypto.randomUUID()}`;
-    return {
+    order.purchase_units[0].payments = {
+      captures: [{ id: captureId, status: 'COMPLETED' }],
+    };
+    const result = {
       id: orderId,
       status: 'COMPLETED',
       purchase_units: [{ payments: { captures: [{ id: captureId, status: 'COMPLETED' }] } }],
     };
+    this.captureByRequestId.set(requestId, result);
+    if (this.failAfterNextCapture) {
+      this.failAfterNextCapture = false;
+      throw new Error('Simulated connection loss after PayPal completed the capture');
+    }
+    return structuredClone(result);
   }
 }

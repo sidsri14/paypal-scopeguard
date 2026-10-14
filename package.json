@@ -1,6 +1,6 @@
 {
   "name": "paypal-scopeguard",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Bounded AI purchase intents with policy reservations and buyer-approved PayPal Orders",
   "type": "module",
   "main": "src/agent_paypal_controller.mjs",

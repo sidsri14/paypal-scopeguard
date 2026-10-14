@@ -275,7 +275,7 @@ textarea:focus {
   100% { border-color: #334155; box-shadow: none; }
 }
 
-button[type="submit"], #capture-button, .approval-link {
+button[type="submit"], #capture-button, #reconcile-button, .approval-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -294,9 +294,16 @@ button[type="submit"], #capture-button, .approval-link {
   transition: transform 0.15s, box-shadow 0.15s;
 }
 
-button[type="submit"]:hover, #capture-button:hover, .approval-link:hover {
+button[type="submit"]:hover, #capture-button:hover, #reconcile-button:hover, .approval-link:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(79, 70, 229, 0.6);
+}
+
+#reconcile-button {
+  margin-left: 0.5rem;
+  background: #1e293b;
+  border: 1px solid #475569;
+  box-shadow: none;
 }
 
 .approval-link {

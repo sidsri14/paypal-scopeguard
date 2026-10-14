@@ -5,9 +5,9 @@ The model can translate a natural-language request into four constrained fields,
 but it cannot call PayPal, approve an order, bypass policy, or capture funds.
 
 This repository is not yet a hackathon submission or a production payment
-service. The local controller and browser flow are tested, but the end-to-end
-flow has not yet been verified with real AI-provider and PayPal sandbox
-credentials.
+service. The local controller, restart recovery, webhook boundary, and browser
+flow are tested, but the end-to-end flow has not yet been verified with real
+AI-provider and PayPal sandbox credentials.
 
 ![ScopeGuard browser interface](scopeguard-ui.png)
 
@@ -23,6 +23,8 @@ untrusted purchase instruction
   -> explicit buyer approval on PayPal
   -> explicit capture action
   -> commit budget only after a COMPLETED capture
+  -> persist controller state with atomic file replacement
+  -> reconcile uncertain outcomes against PayPal Orders
 ```
 
 The AI adapter has no PayPal tools or payment credentials. Its output is treated
@@ -40,8 +42,18 @@ denied by the deterministic spend policy before network I/O.
 - Synchronous reservations before network I/O to prevent concurrent overspend.
 - PayPal Orders v2 create, retrieve, and capture client methods.
 - Stable request IDs for create and capture retries.
+- Atomic, restart-safe JSON snapshots for reservations, pending orders,
+  settlements, audit events, and webhook replay IDs.
+- Ambiguous create failures retain their reservation and can resume with the
+  original stable PayPal request ID; definitive validation failures release it.
 - Mandatory buyer approval before capture.
-- In-memory audit events, emergency revocation, and order abandonment.
+- Explicit order reconciliation for lost create/capture responses and remote
+  `COMPLETED`, `APPROVED`, pending, and `VOIDED` states.
+- Raw-body RSA verification for PayPal webhooks, with PayPal-only certificate
+  URLs, redirect refusal, certificate caching, and event replay deduplication.
+- `CHECKOUT.ORDER.APPROVED` webhooks never capture funds; only the explicit
+  capture action can do that.
+- Durable audit events, emergency revocation, and order abandonment.
 - Loopback-only browser server with CSP and explicit proposal/capture actions.
 - Explicit in-memory PayPal fake for deterministic tests and simulation only.
 
@@ -66,6 +78,7 @@ environment variables without committing them:
 ```powershell
 $env:PAYPAL_CLIENT_ID = "..."
 $env:PAYPAL_CLIENT_SECRET = "..."
+$env:PAYPAL_WEBHOOK_ID = "..." # after registering a sandbox webhook
 $env:AI_API_KEY = "..."
 $env:AI_MODEL = "..."
 # Optional for another compatible provider:
@@ -73,32 +86,52 @@ $env:AI_BASE_URL = "https://api.openai.com/v1"
 npm start
 ```
 
-Open `http://127.0.0.1:8787`. The server refuses non-loopback binding. Public
-deployment requires an authenticated gateway, durable state, secret management,
-and verified webhook/reconciliation handling; those controls are deliberately
-not implied by this prototype.
+Open `http://127.0.0.1:8787`. State is atomically written to
+`data/scopeguard-state.json` by default; set `SCOPEGUARD_STATE_FILE` to use a
+different protected path. No credentials are written into this state file.
+
+The server refuses non-loopback binding. A real webhook deployment still needs
+a separate authenticated HTTPS ingress on port 443 forwarding only
+`POST /api/paypal/webhook` to this process. Configure that public URL in the
+PayPal sandbox application and set its webhook ID in `PAYPAL_WEBHOOK_ID`.
+Without that variable, the webhook route remains disabled. The local API also
+exposes `POST /api/reconcile` with an `orderId` for explicit recovery checks.
+
+Public deployment additionally requires managed secret storage, access control
+for the browser/API routes, backups, and operational monitoring. Those controls
+are not implied by this hackathon prototype.
 
 Only USD is enabled because the current conversion is explicitly two-decimal.
 Supporting other currencies requires a currency exponent table.
 
+## Protocol references
+
+- [PayPal Orders v2 integration](https://developer.paypal.com/api/rest/integration/orders-api)
+- [PayPal webhook verification](https://developer.paypal.com/api/rest/webhooks/rest/)
+- [PayPal webhook event names](https://developer.paypal.com/api/rest/webhooks/event-names/)
+
 ## Verification
 
-Local verification on October 11, 2026:
+Local verification on October 14, 2026:
 
-- `npm test`: all controller, AI-boundary, orchestration, and HTTP tests pass.
+- `npm test`: 25/25 controller, durability, webhook, AI-boundary,
+  orchestration, and HTTP tests pass.
 - `node --check`: all application modules pass syntax validation.
 - `npm audit --omit=dev --audit-level=high`: zero vulnerabilities.
-- Browser render: desktop UI inspected successfully.
-- Axe WCAG A/AA scan: zero violations.
-- Secret-pattern scan: no populated credentials found.
+- Secret-pattern scan: no populated credentials or private keys found.
+- Recovery coverage includes restart with a reserved order, response loss after
+  remote create/capture, stable retry IDs, webhook tampering/replay, and the
+  no-auto-capture approval invariant.
 
 No real AI-provider call or PayPal sandbox transaction is claimed yet.
 
 ## Remaining hackathon gates
 
 1. Create or access PayPal developer sandbox credentials.
-2. Run and record the complete AI extraction, PayPal approval, and capture flow.
-3. Add signed PayPal webhook verification and restart-safe state/reconciliation.
+2. Put the verified webhook endpoint behind HTTPS, register it in the sandbox
+   app, and exercise it with a real sandbox event.
+3. Run and record the complete AI extraction, PayPal approval, capture, and
+   reconciliation flow.
 4. Record the required public demonstration video under three minutes.
 5. Create and confirm the Devpost submission.
 

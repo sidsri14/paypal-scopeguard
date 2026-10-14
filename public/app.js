@@ -3,6 +3,7 @@ const result = document.querySelector('#result');
 const capturePanel = document.querySelector('#capture-panel');
 const returnedOrder = document.querySelector('#returned-order');
 const captureButton = document.querySelector('#capture-button');
+const reconcileButton = document.querySelector('#reconcile-button');
 const instructionInput = document.querySelector('#instruction');
 const presetButtons = document.querySelectorAll('.preset-btn');
 const refreshAuditBtn = document.querySelector('#refresh-audit-btn');
@@ -49,7 +50,11 @@ async function postJson(path, body) {
     body: JSON.stringify(body),
   });
   const payload = await response.json();
-  if (!response.ok) throw new Error(payload.message || payload.error || 'Request failed');
+  if (!response.ok) {
+    const error = new Error(payload.message || payload.error || 'Request failed');
+    error.payload = payload;
+    throw error;
+  }
   return payload;
 }
 
@@ -101,12 +106,12 @@ async function fetchAudit() {
         tdStatus.appendChild(pill);
 
         const tdAmount = document.createElement('td');
-        tdAmount.textContent = ev.amountMinor != null ? formatUsd(ev.amountMinor) : '—';
+        tdAmount.textContent = ev.amountMinor != null ? formatUsd(ev.amountMinor) : '-';
         tdAmount.className = 'cell-amount';
 
         const tdCat = document.createElement('td');
         const catBadge = document.createElement('code');
-        catBadge.textContent = ev.merchantCategory || '—';
+        catBadge.textContent = ev.merchantCategory || '-';
         tdCat.appendChild(catBadge);
 
         const tdDetails = document.createElement('td');
@@ -119,13 +124,13 @@ async function fetchAudit() {
         } else if (ev.orderId) {
           tdDetails.textContent = `Order: ${ev.orderId}`;
         } else {
-          tdDetails.textContent = '—';
+          tdDetails.textContent = '-';
         }
 
         const tdReqId = document.createElement('td');
         const reqCode = document.createElement('code');
         reqCode.title = ev.clientRequestId || '';
-        reqCode.textContent = ev.clientRequestId ? ev.clientRequestId.slice(0, 8) + '...' : '—';
+        reqCode.textContent = ev.clientRequestId ? ev.clientRequestId.slice(0, 8) + '...' : '-';
         tdReqId.appendChild(reqCode);
 
         row.append(tdTime, tdStatus, tdAmount, tdCat, tdDetails, tdReqId);
@@ -173,7 +178,7 @@ form.addEventListener('submit', async (event) => {
       const link = document.createElement('a');
       link.className = 'approval-link';
       link.href = payload.proposal.approvalUrl;
-      link.textContent = 'Continue to PayPal sandbox approval →';
+      link.textContent = 'Continue to PayPal sandbox approval ->';
       result.append(link);
     }
   } catch (error) {
@@ -198,9 +203,23 @@ captureButton.addEventListener('click', async () => {
     showResult('Capture result', payload, 'success');
     capturePanel.hidden = true;
   } catch (error) {
-    showResult('Capture failed', { error: error.message }, 'error');
+    showResult('Capture needs review', error.payload || { error: error.message }, 'error');
     captureButton.disabled = false;
   } finally {
+    await fetchAudit();
+  }
+});
+
+reconcileButton.addEventListener('click', async () => {
+  reconcileButton.disabled = true;
+  try {
+    const payload = await postJson('/api/reconcile', { orderId: returnedToken });
+    showResult('Reconciliation result', payload, payload.status === 'COMPLETED' ? 'success' : 'normal');
+    if (payload.status === 'COMPLETED') capturePanel.hidden = true;
+  } catch (error) {
+    showResult('Reconciliation needs review', error.payload || { error: error.message }, 'error');
+  } finally {
+    reconcileButton.disabled = false;
     await fetchAudit();
   }
 });
