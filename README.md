@@ -4,10 +4,7 @@ PayPal ScopeGuard is a bounded AI purchase-intent prototype for PayPal Orders.
 The model can translate a natural-language request into four constrained fields,
 but it cannot call PayPal, approve an order, bypass policy, or capture funds.
 
-This repository contains the PayPal AI Hackathon submission prototype. It is
-not a production payment service. The local controller, restart recovery,
-webhook boundary, and browser flow are tested, but the end-to-end flow has not
-yet been verified with real AI-provider and PayPal sandbox credentials.
+This repository contains the PayPal AI Hackathon submission prototype built specifically for the **PayPal Developer Platform** using the free **PayPal Sandbox environment** (`https://api-m.sandbox.paypal.com`, Orders v2 REST API, and OAuth2 Client Credentials) integrated with **AI Structured Outputs** (OpenAI-compatible LLM intent extraction). It provides deterministic spend guardrails, idempotent order creation, restart recovery, and raw-body webhook signature verification.
 
 ![ScopeGuard browser interface](scopeguard-ui.png)
 
