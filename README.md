@@ -142,3 +142,9 @@ No real AI-provider call or PayPal sandbox transaction is claimed yet.
 ## License
 
 MIT
+
+## Author & Engineering Services
+
+- **Siddharth Srivastava** ([@sidsri14](https://github.com/sidsri14)) — `sidsri1502@gmail.com`
+- **Portfolio, Articles & Starter Kits**: [sidsri14.github.io](https://sidsri14.github.io/)
+- **Contract Engineering ($60/hr)**: [Upwork Profile](https://www.upwork.com/freelancers/~01f93f1a56b9ef1b8d)
